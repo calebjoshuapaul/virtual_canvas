@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { HandLandmarker, WasmFileset } from "@mediapipe/tasks-vision";
+import { HandLandmarker } from "@mediapipe/tasks-vision";
 
 import WebCam from "./WebCam";
 
-export default function VirtualCanvas({ vision }: { vision: WasmFileset }) {
+export default function VirtualCanvas({ vision }: { vision: any }) {
 	const [handLandmarker, setHandLandMarker] = useState<HandLandmarker>();
 	const [enablePredictions, setEnablePredictions] = useState<Boolean>(false);
 

@@ -1,6 +1,6 @@
 "use client";
-import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
-import { HAND_CONNECTIONS } from "@mediapipe/hands";
+// import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
+// import { HAND_CONNECTIONS } from "@mediapipe/hands";
 import { HandLandmarker } from "@mediapipe/tasks-vision";
 import React, { useEffect, useRef } from "react";
 
@@ -115,7 +115,7 @@ export default function WebCam({
 				ref={canvasRef}
 				width={"100%"}
 				height={"100%"}
-				className="absolute h-full w-full top-0 left-0 bg-white/50"
+				className="absolute h-full w-full top-0 left-0"
 			></canvas>
 			<video
 				ref={camRef}
