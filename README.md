@@ -22,5 +22,5 @@ To run this project locally, follow these steps:
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/yourusername/virtual_canvas.git
+   git clone https://github.com/calebjoshuapaul/virtual_canvas.git
    ```
