@@ -25,11 +25,6 @@ async function predictWebcam(
 	let results;
 	let startTimeMs = Date.now();
 
-	console.log(
-		Math.round(lastVideoTime),
-		"....",
-		Math.round(videoElement.currentTime)
-	);
 	if (Math.round(lastVideoTime) !== Math.round(videoElement.currentTime)) {
 		setLastVideoTime(Math.round(videoElement.currentTime));
 		results = gestureRecognizer.recognizeForVideo(videoElement, startTimeMs);
