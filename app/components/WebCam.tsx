@@ -1,10 +1,6 @@
 "use client";
-import {
-	DrawingUtils,
-	HandLandmarker,
-	GestureRecognizer,
-} from "@mediapipe/tasks-vision";
-import React, { useEffect, useRef } from "react";
+import { DrawingUtils, GestureRecognizer } from "@mediapipe/tasks-vision";
+import React, { useEffect, useRef, useCallback } from "react";
 
 const videoConstraints = {
 	facingMode: "user",
@@ -15,25 +11,28 @@ async function predictWebcam(
 	videoElement: HTMLVideoElement,
 	canvasElement: HTMLCanvasElement,
 	lastVideoTime: number,
-	handLandmarker: HandLandmarker
+	gestureRecognizer: GestureRecognizer
 ) {
 	const canvasCtx = canvasElement.getContext("2d");
 	if (!canvasCtx) return;
 	const drawingUtils = new DrawingUtils(canvasCtx);
 
 	let results;
-	let startTimeMs = performance.now();
+	let startTimeMs = Date.now();
 
 	if (lastVideoTime !== videoElement.currentTime) {
 		lastVideoTime = videoElement.currentTime;
-		results = await handLandmarker.detectForVideo(videoElement, startTimeMs);
+		results = await gestureRecognizer.recognizeForVideo(
+			videoElement,
+			startTimeMs
+		);
 	}
 
 	if (results?.landmarks) {
 		canvasCtx.save();
 		canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+		canvasCtx.scale(1, 1);
 
-		console.log(results);
 		for (const landmarks of results.landmarks) {
 			drawingUtils.drawConnectors(
 				landmarks,
@@ -53,15 +52,15 @@ async function predictWebcam(
 	}
 
 	window.requestAnimationFrame(() =>
-		predictWebcam(videoElement, canvasElement, lastVideoTime, handLandmarker)
+		predictWebcam(videoElement, canvasElement, lastVideoTime, gestureRecognizer)
 	);
 }
 
 export default function WebCam({
-	handLandmarker,
+	gestureRecognizer,
 	enablePredictions,
 }: {
-	handLandmarker: HandLandmarker;
+	gestureRecognizer: GestureRecognizer;
 	enablePredictions: Boolean;
 }) {
 	const camRef = useRef<HTMLVideoElement>(null);
@@ -93,10 +92,10 @@ export default function WebCam({
 				camRef.current,
 				canvasRef.current,
 				lastVideoTime,
-				handLandmarker
+				gestureRecognizer
 			);
 		}
-	}, [enablePredictions, handLandmarker, lastVideoTime]);
+	}, [enablePredictions, gestureRecognizer, lastVideoTime]);
 
 	return (
 		<div className="relative w-full h-full border-2 scale-x-[-1] border-gray-100 ">
