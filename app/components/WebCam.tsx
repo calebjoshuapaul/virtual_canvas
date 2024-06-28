@@ -1,20 +1,15 @@
 "use client";
-// import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
-// import { HAND_CONNECTIONS } from "@mediapipe/hands";
-import { HandLandmarker } from "@mediapipe/tasks-vision";
+import {
+	DrawingUtils,
+	HandLandmarker,
+	GestureRecognizer,
+} from "@mediapipe/tasks-vision";
 import React, { useEffect, useRef } from "react";
 
 const videoConstraints = {
 	facingMode: "user",
 	video: true,
 };
-
-function drawPoint(ctx: any, x: any, y: any, r: any, color: any) {
-	ctx.beginPath();
-	ctx.arc(x, y, r, 0, 2 * Math.PI);
-	ctx.fillStyle = color;
-	ctx.fill();
-}
 
 async function predictWebcam(
 	videoElement: HTMLVideoElement,
@@ -24,6 +19,7 @@ async function predictWebcam(
 ) {
 	const canvasCtx = canvasElement.getContext("2d");
 	if (!canvasCtx) return;
+	const drawingUtils = new DrawingUtils(canvasCtx);
 
 	let results;
 	let startTimeMs = performance.now();
@@ -39,26 +35,19 @@ async function predictWebcam(
 
 		console.log(results);
 		for (const landmarks of results.landmarks) {
-			// drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
-			// 	color: "#00FF00",
-			// 	lineWidth: 5,
-			// 	radius: 5,
-			// 	visibilityMin: 5,
-			// });
-			// drawLandmarks(canvasCtx, landmarks, {
-			// 	color: "#FF0000",
-			// 	lineWidth: 2,
-			// 	visibilityMin: 50,
-			// });
-			for (let i = 0; i < landmarks.length; i++) {
-				drawPoint(
-					canvasCtx,
-					landmarks[i].x * canvasElement.width,
-					landmarks[i].y * canvasElement.height,
-					1,
-					"#00FF00"
-				);
-			}
+			drawingUtils.drawConnectors(
+				landmarks,
+				GestureRecognizer.HAND_CONNECTIONS,
+				{
+					color: "#00FF00",
+					lineWidth: 1.5,
+				}
+			);
+			drawingUtils.drawLandmarks(landmarks, {
+				color: "#FF0000",
+				lineWidth: 1,
+				radius: 1,
+			});
 		}
 		canvasCtx.restore();
 	}
@@ -110,7 +99,7 @@ export default function WebCam({
 	}, [enablePredictions, handLandmarker, lastVideoTime]);
 
 	return (
-		<div className="relative w-full h-full border-2 border-gray-100 ">
+		<div className="relative w-full h-full border-2 scale-x-[-1] border-gray-100 ">
 			<canvas
 				ref={canvasRef}
 				width={"100%"}
