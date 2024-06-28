@@ -24,3 +24,5 @@ To run this project locally, follow these steps:
    ```sh
    git clone https://github.com/calebjoshuapaul/virtual_canvas.git
    ```
+
+## TODO: Improve performance
