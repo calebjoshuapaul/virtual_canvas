@@ -11,7 +11,8 @@ async function predictWebcam(
 	videoElement: HTMLVideoElement,
 	canvasElement: HTMLCanvasElement,
 	lastVideoTime: number,
-	gestureRecognizer: GestureRecognizer
+	gestureRecognizer: GestureRecognizer,
+	setLastVideoTime: (time: number) => void
 ) {
 	const canvasCtx = canvasElement.getContext("2d");
 	if (!canvasCtx) return;
@@ -21,11 +22,8 @@ async function predictWebcam(
 	let startTimeMs = Date.now();
 
 	if (lastVideoTime !== videoElement.currentTime) {
-		lastVideoTime = videoElement.currentTime;
-		results = await gestureRecognizer.recognizeForVideo(
-			videoElement,
-			startTimeMs
-		);
+		setLastVideoTime(videoElement.currentTime);
+		results = gestureRecognizer.recognizeForVideo(videoElement, startTimeMs);
 	}
 
 	if (results?.landmarks) {
@@ -52,7 +50,13 @@ async function predictWebcam(
 	}
 
 	window.requestAnimationFrame(() =>
-		predictWebcam(videoElement, canvasElement, lastVideoTime, gestureRecognizer)
+		predictWebcam(
+			videoElement,
+			canvasElement,
+			lastVideoTime,
+			gestureRecognizer,
+			setLastVideoTime
+		)
 	);
 }
 
@@ -65,37 +69,40 @@ export default function WebCam({
 }) {
 	const camRef = useRef<HTMLVideoElement>(null);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-
-	let lastVideoTime = -1;
+	const lastVideoTimeRef = useRef(-1);
 
 	useEffect(() => {
+		const setLastVideoTime = (time: number) => {
+			lastVideoTimeRef.current = time;
+		};
+
+		const startPrediction = async () => {
+			if (enablePredictions && camRef.current && canvasRef.current) {
+				predictWebcam(
+					camRef.current,
+					canvasRef.current,
+					lastVideoTimeRef.current,
+					gestureRecognizer,
+					setLastVideoTime
+				);
+			}
+		};
+
 		navigator.mediaDevices
-			.getUserMedia({
-				video: videoConstraints,
-			})
+			.getUserMedia({ video: videoConstraints })
 			.then((stream) => {
 				if (camRef.current) {
 					camRef.current.srcObject = stream;
 					camRef.current.onloadedmetadata = () => {
 						camRef.current?.play();
+						startPrediction();
 					};
 				}
 			})
 			.catch((e) => {
 				console.log(e);
 			});
-	}, []);
-
-	useEffect(() => {
-		if (enablePredictions && camRef.current && canvasRef.current) {
-			predictWebcam(
-				camRef.current,
-				canvasRef.current,
-				lastVideoTime,
-				gestureRecognizer
-			);
-		}
-	}, [enablePredictions, gestureRecognizer, lastVideoTime]);
+	}, [enablePredictions, gestureRecognizer]);
 
 	return (
 		<div className="relative w-full h-full border-2 scale-x-[-1] border-gray-100 ">
