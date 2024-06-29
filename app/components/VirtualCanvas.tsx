@@ -10,7 +10,7 @@ import {
 
 import WebCam from "./WebCam";
 
-const lastVideoTimeM = 0;
+const coords = { x: 0, y: 0 };
 
 interface WasmFileset {
 	/** The path to the Wasm loader script. */
@@ -22,6 +22,7 @@ interface WasmFileset {
 	/** The optional path to the assets binary. */
 	assetBinaryPath?: string;
 }
+
 function drawHandsOnVideo(
 	ctx: CanvasRenderingContext2D,
 	canvasElement: HTMLCanvasElement,
@@ -51,47 +52,72 @@ function drawHandsOnVideo(
 function drawResultsOnCanvas(
 	ctx: CanvasRenderingContext2D,
 	canvasElement: HTMLCanvasElement,
-	results: GestureRecognizerResult
+	results: GestureRecognizerResult,
+	coords: { x: number; y: number }
+	// setCoords: ({ x, y }: { x: number; y: number }) => void
 ) {
 	if (results.gestures.length < 1) return;
 	const categoryName = results.gestures[0][0].categoryName;
-	const categoryScore = (results.gestures[0][0].score * 100).toFixed(2);
-	const handedness = results.handedness[0][0].displayName;
+	// const categoryScore = (results.gestures[0][0].score * 100).toFixed(2);
+	// const handedness = results.handedness[0][0].displayName;
+	const x = results.landmarks[0][8].x;
+	const y = results.landmarks[0][8].y;
 
-	ctx.save();
-	ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-	ctx.scale(1, 1);
+	// ctx.save();
+	// ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+	// ctx.scale(1, 1);
 
-	ctx.fillText(`GestureRecognizer: ${categoryName}`, 10, 20);
-	ctx.fillText(`Confidence: ${categoryScore}`, 10, 40);
-	ctx.fillText(`Handedness: ${handedness}`, 10, 60);
+	// ctx.fillText(`GestureRecognizer: ${categoryName}`, 10, 20);
+	// ctx.fillText(`Confidence: ${categoryScore}`, 10, 40);
+	// ctx.fillText(`Handedness: ${handedness}`, 10, 60);
 
-	ctx.restore();
+	if (categoryName === "Pointing_Up") {
+		if (
+			(coords.x === 0 && coords.y === 0) ||
+			Math.abs((coords.x - x) * canvasElement.width) > 15 ||
+			Math.abs((coords.y - y) * canvasElement.height) > 15
+		) {
+			coords.x = x;
+			coords.y = y;
+			return;
+		}
+		ctx.beginPath();
+		ctx.lineWidth = 2;
+		ctx.lineCap = "round";
+		ctx.strokeStyle = "#5fbfff";
+		ctx.moveTo(coords.x * canvasElement.width, coords.y * canvasElement.height);
+		coords.x = x;
+		coords.y = y;
+		ctx.lineTo(x * canvasElement.width, y * canvasElement.height);
+		ctx.stroke();
+	}
+
+	// ctx.restore();
 }
 
 const predictWebcam = (
 	gestureRecognizer: GestureRecognizer,
 	videoElement: HTMLVideoElement,
 	canvasElement: HTMLCanvasElement,
-	resCanvasElement: HTMLCanvasElement,
-	lastVideoTime: number = lastVideoTimeM
+	resCanvasElement: HTMLCanvasElement
 ) => {
-	const canvasCtx = canvasElement?.getContext("2d");
-	if (!canvasCtx) return;
-
+	const canvasCtx = canvasElement.getContext("2d");
 	const resCanvasCtx = resCanvasElement.getContext("2d");
+
+	if (!canvasCtx) return;
 	if (!resCanvasCtx) return;
 
-	let startTimeMs = Date.now();
-
-	const results = gestureRecognizer.recognizeForVideo(
-		videoElement,
-		startTimeMs
-	);
+	const results = gestureRecognizer.recognizeForVideo(videoElement, Date.now());
 
 	if (results && results?.landmarks) {
 		drawHandsOnVideo(canvasCtx, canvasElement, results.landmarks);
-		drawResultsOnCanvas(resCanvasCtx, resCanvasElement, results);
+		drawResultsOnCanvas(
+			resCanvasCtx,
+			resCanvasElement,
+			results,
+			coords
+			// setCoords
+		);
 	}
 
 	window.requestAnimationFrame(() =>
@@ -99,8 +125,7 @@ const predictWebcam = (
 			gestureRecognizer,
 			videoElement,
 			canvasElement,
-			resCanvasElement,
-			lastVideoTime
+			resCanvasElement
 		)
 	);
 };
@@ -114,6 +139,7 @@ export default function VirtualCanvas({ vision }: { vision: WasmFileset }) {
 	const [gestureRecognizer, setGestureRecognizer] =
 		useState<GestureRecognizer>();
 	const [isCamMounted, setIsCamMounted] = useState(false);
+	// const [coords, setCoords] = useState({ x: 0, y: 0 });
 
 	useEffect(() => {
 		if (
@@ -157,7 +183,6 @@ export default function VirtualCanvas({ vision }: { vision: WasmFileset }) {
 						camRef.current.onloadedmetadata = () => {
 							setIsCamMounted(true);
 							camRef.current?.play();
-							//Start gesture predict function
 						};
 					}
 				})
@@ -179,7 +204,7 @@ export default function VirtualCanvas({ vision }: { vision: WasmFileset }) {
 			>
 				<canvas
 					ref={resCanvasRef}
-					className="border-2 border-gray-100 flex-1 h-96 w-[450px] max-w-[450px] bg-gray-50"
+					className="border-2 border-gray-100 flex-1 h-96 w-[450px] scale-x-[-1] max-w-[450px] bg-gray-50"
 				/>
 			</Suspense>
 			<Suspense
