@@ -174,7 +174,7 @@ export default function VirtualCanvas({ vision }: { vision: WasmFileset }) {
 	}, [vision]);
 
 	useEffect(() => {
-		if (camRef) {
+		if (gestureRecognizer && camRef.current) {
 			navigator.mediaDevices
 				.getUserMedia({ video: { facingMode: "user" } })
 				.then((stream) => {
@@ -190,7 +190,7 @@ export default function VirtualCanvas({ vision }: { vision: WasmFileset }) {
 					console.log(e);
 				});
 		}
-	}, [camRef]);
+	}, [gestureRecognizer]);
 
 	if (gestureRecognizer === undefined) {
 		return <div>Loading...</div>;
